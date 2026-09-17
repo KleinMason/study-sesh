@@ -7,9 +7,15 @@ description: Generate the daily backend study quiz — pick the next concept, re
 
 ## Step 1 — Resolve paths
 
-The kit root is the directory containing this skill's `skills/` parent. Read
+The kit root is the parent directory of this skill's `skills/` folder. Read
 `config.json` there for `dataDir` and `timezone`. Compute today's date as `YYYY-MM-DD`
 in that timezone.
+
+Do not use `toISOString()` or an unqualified `date` command — both return the UTC date,
+which is wrong after roughly 6pm Central. Use an IANA-timezone-aware method:
+`Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })`,
+or `TZ=<timezone> date +%Y-%m-%d`. `lib/config.js` already exports `today(timezone)` which
+does exactly this.
 
 ## Step 2 — Idempotency check
 
@@ -151,6 +157,9 @@ Check all of the following. If any fails, fix it before reporting success:
 - Every short-answer key entry has a rubric with 2-3 points.
 - Every cited URL was successfully fetched during research.
 - The primer is between 300 and 500 words.
+- The quiz `.md` contains no answer content from the key: no correct-option markers, no
+  `why` explanations, no rubric text. Grep the `.md` for the key's own answer strings and
+  confirm no match.
 
 ## Step 9 — Report
 

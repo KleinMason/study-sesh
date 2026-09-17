@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "01-layers",
+      "name": "Separation of Concerns & Architectural Abstraction Layers",
+      "concepts": [
+        { "id": "layered-architecture", "name": "The four-layer model and what belongs in each" },
+        { "id": "dependency-inversion", "name": "Dependency inversion and why the domain owns its interfaces" },
+        { "id": "clean-architecture", "name": "Clean architecture and the dependency rule" },
+        { "id": "active-record-vs-data-mapper", "name": "Active Record vs Data Mapper tradeoffs" },
+        { "id": "domain-invariants", "name": "Domain invariants and where to enforce them" },
+        { "id": "repository-pattern", "name": "The repository pattern and its leaky abstractions" },
+        { "id": "anemic-domain-model", "name": "The anemic domain model anti-pattern" }
+      ]
+    },
+    {
+      "id": "02-api-design",
+      "name": "API Design & Versioning",
+      "concepts": [
+        { "id": "http-status-semantics", "name": "HTTP status code semantics beyond 200 and 500" },
+        { "id": "api-versioning-strategies", "name": "URL vs header versioning tradeoffs" },
+        { "id": "breaking-change-management", "name": "What counts as a breaking change" },
+        { "id": "rest-vs-graphql", "name": "REST vs GraphQL: where each one hurts" },
+        { "id": "richardson-maturity", "name": "The Richardson Maturity Model and HATEOAS in practice" },
+        { "id": "pagination-strategies", "name": "Offset vs cursor pagination" },
+        { "id": "idempotency-keys", "name": "Idempotency keys on write endpoints" }
+      ]
+    },
+    {
+      "id": "03-design-patterns",
+      "name": "Object Instantiation & Design Patterns",
+      "concepts": [
+        { "id": "singleton-and-lifetimes", "name": "Singleton, object lifetimes, and what should actually be shared" },
+        { "id": "factory-pattern", "name": "Factory and when construction deserves its own object" },
+        { "id": "builder-pattern", "name": "Builder for objects with many optional parts" },
+        { "id": "adapter-pattern", "name": "Adapter for hostile third-party interfaces" },
+        { "id": "facade-pattern", "name": "Facade and containing vendor SDK sprawl" },
+        { "id": "strategy-pattern", "name": "Strategy vs conditional branching" },
+        { "id": "observer-pattern", "name": "Observer and in-process event fan-out" },
+        { "id": "dependency-injection", "name": "Dependency injection and testable construction" }
+      ]
+    },
+    {
+      "id": "04-migrations",
+      "name": "Data Migrations & Schema Evolution",
+      "concepts": [
+        { "id": "expand-contract", "name": "The expand/contract migration pattern" },
+        { "id": "backfilling-in-batches", "name": "Backfilling large tables in batches" },
+        { "id": "migration-locks", "name": "Which DDL statements take blocking locks" },
+        { "id": "zero-downtime-column-rename", "name": "Renaming a column with zero downtime" },
+        { "id": "rollback-scripts", "name": "Down migrations and why most are wrong" },
+        { "id": "idempotent-migrations", "name": "Idempotent migrations and partial failure" },
+        { "id": "blue-green-schema", "name": "Blue/green deploys against one database" }
+      ]
+    },
+    {
+      "id": "05-connections",
+      "name": "Database Connection Lifecycle & Resource Management",
+      "concepts": [
+        { "id": "connection-pool-sizing", "name": "Sizing a connection pool" },
+        { "id": "pool-exhaustion", "name": "Pool exhaustion and the queue that precedes it" },
+        { "id": "connection-leaks", "name": "Connection leaks and how to detect them" },
+        { "id": "statement-timeouts", "name": "Statement and transaction timeouts" },
+        { "id": "pgbouncer-modes", "name": "External poolers and their pooling modes" },
+        { "id": "socket-exhaustion", "name": "Ephemeral port and socket exhaustion" },
+        { "id": "cascading-failure", "name": "How resource starvation cascades across services" }
+      ]
+    },
+    {
+      "id": "06-concurrency",
+      "name": "Concurrency, Race Conditions & Locking Strategies",
+      "concepts": [
+        { "id": "optimistic-locking", "name": "Optimistic locking with version columns" },
+        { "id": "pessimistic-locking", "name": "SELECT FOR UPDATE and what it actually blocks" },
+        { "id": "isolation-levels", "name": "Transaction isolation levels and the anomalies each allows" },
+        { "id": "lost-update", "name": "The lost update problem" },
+        { "id": "fencing-tokens", "name": "Distributed locks and fencing tokens" },
+        { "id": "deadlocks", "name": "Deadlocks, lock ordering, and retry" },
+        { "id": "skip-locked-queues", "name": "FOR UPDATE SKIP LOCKED as a job queue" }
+      ]
+    },
+    {
+      "id": "07-data-modeling",
+      "name": "Advanced Data Modeling & Storage Patterns",
+      "concepts": [
+        { "id": "normalization-forms", "name": "Normal forms and what each one prevents" },
+        { "id": "denormalization-tradeoffs", "name": "Denormalization and write amplification" },
+        { "id": "outbox-pattern", "name": "The transactional outbox and at-least-once delivery" },
+        { "id": "eav-modeling", "name": "Entity-Attribute-Value and its costs" },
+        { "id": "single-table-design", "name": "Single-table design in key-value stores" },
+        { "id": "sharding-keys", "name": "Choosing a shard key" },
+        { "id": "soft-deletes", "name": "Soft deletes and the queries they break" }
+      ]
+    },
+    {
+      "id": "08-background-jobs",
+      "name": "Background Jobs & Worker Systems",
+      "concepts": [
+        { "id": "job-idempotency", "name": "Job idempotency and safe retries" },
+        { "id": "retry-backoff", "name": "Exponential backoff and jitter" },
+        { "id": "dead-letter-queues", "name": "Dead-letter queues and poison messages" },
+        { "id": "queue-backends", "name": "Redis vs RabbitMQ vs SQS tradeoffs" },
+        { "id": "worker-concurrency", "name": "Worker pool sizing and prefetch" },
+        { "id": "visibility-timeouts", "name": "Visibility timeouts and duplicate processing" },
+        { "id": "ordering-guarantees", "name": "Message ordering guarantees and when you need them" }
+      ]
+    },
+    {
+      "id": "09-caching",
+      "name": "Caching Strategies & Performance",
+      "concepts": [
+        { "id": "cache-aside", "name": "Cache-aside and its race conditions" },
+        { "id": "write-through-behind", "name": "Write-through vs write-behind" },
+        { "id": "cache-stampede", "name": "Cache stampede and how to prevent it" },
+        { "id": "cache-invalidation", "name": "Invalidation strategies and staleness budgets" },
+        { "id": "ttl-and-jitter", "name": "TTL selection and expiry jitter" },
+        { "id": "cache-key-design", "name": "Cache key design and versioning" },
+        { "id": "negative-caching", "name": "Negative caching and cache penetration" }
+      ]
+    },
+    {
+      "id": "10-observability",
+      "name": "Observability, Logging & Tracing",
+      "concepts": [
+        { "id": "structured-logging", "name": "Structured logging and what to put in a log line" },
+        { "id": "red-method", "name": "The RED method: rate, errors, duration" },
+        { "id": "distributed-tracing", "name": "Distributed tracing, spans, and context propagation" },
+        { "id": "cardinality", "name": "Metric cardinality and why labels get expensive" },
+        { "id": "percentile-latency", "name": "Why p99 matters more than the mean" },
+        { "id": "alerting-on-symptoms", "name": "Alerting on symptoms, not causes" },
+        { "id": "health-checks", "name": "Liveness vs readiness checks" }
+      ]
+    },
+    {
+      "id": "11-distributed",
+      "name": "Distributed Systems & Architectural Principles",
+      "concepts": [
+        { "id": "cap-theorem", "name": "CAP: what the tradeoff actually is" },
+        { "id": "idempotent-apis", "name": "Idempotent APIs under client retries" },
+        { "id": "async-202", "name": "202 Accepted and offloading long work" },
+        { "id": "event-driven-architecture", "name": "Event-driven architecture and its coupling" },
+        { "id": "eventual-consistency", "name": "Eventual consistency and read-your-writes" },
+        { "id": "circuit-breakers", "name": "Circuit breakers and bulkheads" },
+        { "id": "clock-skew", "name": "Clock skew and why timestamps lie" }
+      ]
+    }
+  ]
+}

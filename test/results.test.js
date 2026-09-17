@@ -1,0 +1,139 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { makeTempKit, writeResults } = require('./helpers');
+const {
+  readResults, resolveLatest, conceptStats, coveredConceptIds, appendResults, gradedQuizIds
+} = require('../lib/results');
+
+function entry(over = {}) {
+  return Object.assign({
+    ts: '2026-09-18T13:00:00Z',
+    quiz: '2026-09-18-optimistic-locking',
+    categoryId: '06-concurrency',
+    conceptId: 'optimistic-locking',
+    q: 1,
+    type: 'mc',
+    correct: true,
+    score: 1
+  }, over);
+}
+
+test('readResults returns an empty array when the log does not exist', () => {
+  const kit = makeTempKit();
+  try {
+    assert.deepEqual(readResults(kit.dataDir), []);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('readResults skips blank lines', () => {
+  const kit = makeTempKit();
+  try {
+    fs.writeFileSync(
+      path.join(kit.dataDir, 'results.jsonl'),
+      JSON.stringify(entry()) + '\n\n' + JSON.stringify(entry({ q: 2 })) + '\n'
+    );
+    assert.equal(readResults(kit.dataDir).length, 2);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('resolveLatest keeps the last entry for a quiz/question pair', () => {
+  const entries = [
+    entry({ q: 1, score: 0, correct: false }),
+    entry({ q: 1, score: 1, correct: true, ts: '2026-09-18T14:00:00Z', corrects: true })
+  ];
+  const resolved = resolveLatest(entries);
+  assert.equal(resolved.length, 1);
+  assert.equal(resolved[0].score, 1);
+  assert.equal(resolved[0].corrects, true);
+});
+
+test('resolveLatest keeps distinct questions separate', () => {
+  const resolved = resolveLatest([entry({ q: 1 }), entry({ q: 2 })]);
+  assert.equal(resolved.length, 2);
+});
+
+test('conceptStats computes mean score across resolved entries', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 1 }),
+    entry({ q: 2, score: 0, correct: false }),
+    entry({ q: 3, type: 'short', correct: null, score: 0.5 })
+  ]);
+  const s = stats.get('optimistic-locking');
+  assert.equal(s.count, 3);
+  assert.equal(s.meanScore, 0.5);
+  assert.equal(s.categoryId, '06-concurrency');
+});
+
+test('conceptStats uses corrected scores, not superseded ones', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 0, correct: false }),
+    entry({ q: 1, score: 1, correct: true, ts: '2026-09-18T14:00:00Z', corrects: true })
+  ]);
+  assert.equal(stats.get('optimistic-locking').meanScore, 1);
+});
+
+test('conceptStats collects misses with their notes', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 1 }),
+    entry({ q: 2, score: 0, correct: false, note: 'picked the pick-any-two option' })
+  ]);
+  const misses = stats.get('optimistic-locking').misses;
+  assert.equal(misses.length, 1);
+  assert.equal(misses[0].q, 2);
+  assert.equal(misses[0].note, 'picked the pick-any-two option');
+});
+
+test('conceptStats records the latest timestamp seen', () => {
+  const stats = conceptStats([
+    entry({ q: 1, ts: '2026-09-18T13:00:00Z' }),
+    entry({ q: 2, ts: '2026-09-20T13:00:00Z' })
+  ]);
+  assert.equal(stats.get('optimistic-locking').lastTs, '2026-09-20T13:00:00Z');
+});
+
+test('coveredConceptIds returns every concept with any result', () => {
+  const covered = coveredConceptIds([
+    entry(),
+    entry({ conceptId: 'fencing-tokens', quiz: '2026-09-19-fencing-tokens' })
+  ]);
+  assert.deepEqual([...covered].sort(), ['fencing-tokens', 'optimistic-locking']);
+});
+
+test('gradedQuizIds returns every quiz id with results', () => {
+  const ids = gradedQuizIds([entry(), entry({ quiz: '2026-09-19-fencing-tokens' })]);
+  assert.equal(ids.size, 2);
+  assert.equal(ids.has('2026-09-18-optimistic-locking'), true);
+});
+
+test('appendResults writes one line per entry and never rewrites', () => {
+  const kit = makeTempKit();
+  try {
+    writeResults(kit.dataDir, [entry({ q: 1 })]);
+    const added = appendResults(kit.dataDir, [entry({ q: 2 }), entry({ q: 3 })]);
+    assert.equal(added, 2);
+    const lines = fs.readFileSync(path.join(kit.dataDir, 'results.jsonl'), 'utf8')
+      .trim().split('\n');
+    assert.equal(lines.length, 3);
+    assert.equal(JSON.parse(lines[0]).q, 1);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('appendResults creates the data directory when missing', () => {
+  const kit = makeTempKit();
+  try {
+    fs.rmSync(kit.dataDir, { recursive: true, force: true });
+    appendResults(kit.dataDir, [entry()]);
+    assert.equal(fs.existsSync(path.join(kit.dataDir, 'results.jsonl')), true);
+  } finally {
+    kit.cleanup();
+  }
+});

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { sampleBank, makeTempKit } = require('./helpers');
-const { nextTopic, readState } = require('../lib/rotation');
+const { nextTopic, readState, writeState } = require('../lib/rotation');
 
 const EMPTY_STATE = { version: 1, cursor: { categoryId: null, round: 1 } };
 
@@ -100,6 +100,45 @@ test('readState defaults when state.json does not exist', () => {
   const kit = makeTempKit();
   try {
     assert.deepEqual(readState(kit.dataDir), EMPTY_STATE);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+// A state.json that parses but holds the wrong types is worse than one that does not
+// parse: `round` as a string makes the wrap arithmetic concatenate ("3" + 1 -> "31"),
+// and that corrupted value is then written straight back to disk.
+test('readState rejects a non-numeric round', () => {
+  const kit = makeTempKit();
+  try {
+    fs.writeFileSync(
+      path.join(kit.dataDir, 'state.json'),
+      JSON.stringify({ version: 1, cursor: { categoryId: '01-layers', round: '3' } })
+    );
+    assert.throws(() => readState(kit.dataDir), /round must be a positive integer/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('readState rejects a cursor that is not an object', () => {
+  const kit = makeTempKit();
+  try {
+    fs.writeFileSync(
+      path.join(kit.dataDir, 'state.json'),
+      JSON.stringify({ version: 1, cursor: 'nope' })
+    );
+    assert.throws(() => readState(kit.dataDir), /cursor must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('readState accepts the shape writeState produces', () => {
+  const kit = makeTempKit();
+  try {
+    writeState(kit.dataDir, { version: 1, cursor: { categoryId: '06-concurrency', round: 2 } });
+    assert.deepEqual(readState(kit.dataDir).cursor, { categoryId: '06-concurrency', round: 2 });
   } finally {
     kit.cleanup();
   }

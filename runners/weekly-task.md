@@ -21,8 +21,38 @@ Generate this week's backend retention review.
    `misses` array. Do not repeat a missed question verbatim — ask the same idea a
    different way.
 4. Follow the file format and answer-key rules in `skills/study-generate/SKILL.md`,
-   writing to `<dataDir>/quizzes/YYYY-MM-DD-review.md` and its matching key. The key
-   carries a per-question `conceptId` and `categoryId`, because a review spans concepts.
+   writing to `<dataDir>/quizzes/YYYY-MM-DD-review.md` and its matching key. A review
+   spans concepts, so the key differs from a daily key: `conceptId` and `categoryId` move
+   from the top level onto each question. Use exactly this shape — the grader reads those
+   two fields per question when it records results:
+
+   ```json
+   {
+     "quiz": "YYYY-MM-DD-review",
+     "review": true,
+     "questions": [
+       {
+         "q": 1,
+         "conceptId": "optimistic-locking",
+         "categoryId": "06-concurrency",
+         "type": "mc",
+         "correct": "b",
+         "why": "One sentence on why b is right.",
+         "distractors": {
+           "a": "The misconception this option encodes.",
+           "c": "The misconception this option encodes."
+         }
+       },
+       {
+         "q": 2,
+         "conceptId": "cap-theorem",
+         "categoryId": "11-distributed",
+         "type": "short",
+         "rubric": ["First required point.", "Second required point."]
+       }
+     ]
+   }
+   ```
 5. No primer is needed — this is a retention check on material already taught. Link back
    to each concept's original quiz file instead.
 6. Report the concept count and the review file path.

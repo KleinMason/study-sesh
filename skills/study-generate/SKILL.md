@@ -36,7 +36,10 @@ silently suppress that day's daily quiz.
 
 ## Step 3 — Get the topic
 
-Run `bin/study next-topic`. Parse the JSON.
+Run `bin/study next-topic`. Parse the JSON. This call is read-only: it reports the topic
+without advancing the rotation cursor. Committing is a separate step you take in Step 9,
+only once the quiz file actually exists — so if research fails or this run dies partway,
+tomorrow retries the same category instead of silently skipping it.
 
 If `needsNewConcepts` is `true`:
 1. Research 3-5 additional concepts for that category that are not in `coveredConcepts`.
@@ -172,7 +175,18 @@ Check all of the following. If any fails, fix it before reporting success:
   `why` explanations, no rubric text. Grep the `.md` for the key's own answer strings and
   confirm no match.
 
-## Step 9 — Report
+## Step 9 — Commit the rotation cursor
+
+Only after Step 8 passes, run `bin/study next-topic --commit`. This advances the cursor so
+tomorrow serves the next category. Because neither the cursor nor `results.jsonl` changed
+since Step 3, it returns the same topic you just wrote a quiz for — confirm that it does.
+If it reports a different concept, something else ran in between: stop and report rather
+than committing.
+
+Never run `--commit` before the quiz and key files are written and validated. An advanced
+cursor with no quiz behind it is a category that silently loses its turn for the round.
+
+## Step 10 — Report
 
 Print the concept name and the absolute path to the quiz file. Nothing else — this line
 becomes the morning notification.

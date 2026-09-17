@@ -90,6 +90,64 @@ test('next-topic prints the documented JSON keys', () => {
   }
 });
 
+// The cursor used to advance the moment a topic was served, so a generator that died
+// during research — or a human running the command to look — silently burned that
+// category's turn for the round. Committing is now a separate, explicit step the
+// generator takes only after the quiz file exists.
+test('next-topic does not advance the cursor', () => {
+  const kit = makeCliKit();
+  try {
+    const first = JSON.parse(runStudy(kit, ['next-topic']).stdout);
+    const second = JSON.parse(runStudy(kit, ['next-topic']).stdout);
+    assert.equal(second.categoryId, first.categoryId);
+    assert.equal(second.conceptId, first.conceptId);
+    assert.equal(
+      fs.existsSync(path.join(kit.dataDir, 'state.json')), false,
+      'a read-only next-topic must not write state.json'
+    );
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('next-topic --commit advances the cursor to the next category', () => {
+  const kit = makeCliKit();
+  try {
+    const committed = JSON.parse(runStudy(kit, ['next-topic', '--commit']).stdout);
+    assert.equal(committed.categoryId, '01-layers');
+    const state = JSON.parse(fs.readFileSync(path.join(kit.dataDir, 'state.json'), 'utf8'));
+    assert.equal(state.cursor.categoryId, '01-layers');
+    const next = JSON.parse(runStudy(kit, ['next-topic']).stdout);
+    assert.equal(next.categoryId, '06-concurrency');
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('next-topic --commit returns the same topic the read-only call did', () => {
+  const kit = makeCliKit();
+  try {
+    const peeked = JSON.parse(runStudy(kit, ['next-topic']).stdout);
+    const committed = JSON.parse(runStudy(kit, ['next-topic', '--commit']).stdout);
+    assert.equal(committed.conceptId, peeked.conceptId);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('record-result rejects a malformed timestamp', () => {
+  const kit = makeCliKit();
+  try {
+    const batch = [resultEntry({ ts: 'yesterday' })];
+    const run = runStudy(kit, ['record-result'], JSON.stringify(batch));
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /ts must be an ISO 8601/);
+    assert.equal(fs.existsSync(kit.resultsPath), false);
+  } finally {
+    kit.cleanup();
+  }
+});
+
 test('record-result appends a valid batch and reports the count', () => {
   const kit = makeCliKit();
   try {

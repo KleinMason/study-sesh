@@ -2,7 +2,9 @@
 
 Install to `~/.claude/scheduled-tasks/study-weekly/SKILL.md`, replacing `<KIT_ROOT>`.
 
-Schedule: once a week. This is an **extra** sitting — the daily quiz still runs that week.
+Schedule: once a week — suggested cron `0 9 * * 6` (Saturday 9am, local time; see the
+README's Scheduling section for how this maps to a Claude Desktop scheduled task). This is
+an **extra** sitting — the daily quiz still runs that week.
 
 ```markdown
 ---

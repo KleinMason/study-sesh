@@ -3,7 +3,8 @@
 Install to `~/.claude/scheduled-tasks/study-daily/SKILL.md`, replacing `<KIT_ROOT>` with
 the absolute path to your kit (for example `/Users/mk/Development/MWI/study-sesh`).
 
-Schedule: weekday mornings.
+Schedule: weekday mornings — suggested cron `0 6 * * 1-5` (6am, local time; see the
+README's Scheduling section for how this maps to a Claude Desktop scheduled task).
 
 ```markdown
 ---

@@ -23,9 +23,25 @@ Then install the scheduled tasks:
 2. Copy `runners/weekly-task.md` to `~/.claude/scheduled-tasks/study-weekly/SKILL.md`.
 3. Schedule the daily task for weekday mornings and the weekly task once a week.
 
+### Scheduling
+
+Scheduled tasks are a Claude Desktop feature: ask Claude in the desktop app to create a
+scheduled task pointing at the template, or use the app's own scheduled-tasks UI. Either
+way, the task ends up stored as `~/.claude/scheduled-tasks/{taskId}/SKILL.md` — the exact
+file the steps above tell you to write.
+
+The schedule itself is a standard 5-field cron expression evaluated in **local** time, not
+UTC. Weekday mornings at 6am is `0 6 * * 1-5`; a Saturday-morning weekly review at 9am is
+`0 9 * * 6`.
+
+Tasks only run while the desktop app is open. If the app is closed when one is due, it runs
+on next launch instead — which is why a missed morning is a harmless no-op rather than a
+lost day, and why the generator's idempotency check matters.
+
 ## Daily use
 
-- The morning task writes `data/quizzes/YYYY-MM-DD-<concept>.md`.
+- The morning task writes `<dataDir>/quizzes/YYYY-MM-DD-<concept>.md`, where `<dataDir>` is
+  whatever `config.json` points at (`data/` by default).
 - Read the primer, type answers after each `**Your answer:**`.
 - In a Claude session, say **"grade me"**.
 

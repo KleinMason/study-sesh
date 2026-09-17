@@ -70,10 +70,12 @@ test('it carries the concept name, category, score, and misses', () => {
 
 test('missed concepts are drawn far more often than mastered ones', () => {
   const entries = [entry('layered-architecture', 0), entry('optimistic-locking', 1)];
+  // One shared stream: a fresh LCG per seed samples only correlated first outputs.
+  const rng = seededRng(1);
   let missed = 0;
   let mastered = 0;
-  for (let seed = 1; seed <= 400; seed += 1) {
-    const [pick] = reviewSet(sampleBank(), entries, { count: 1, now: NOW, rng: seededRng(seed) });
+  for (let draw = 0; draw < 400; draw += 1) {
+    const [pick] = reviewSet(sampleBank(), entries, { count: 1, now: NOW, rng });
     if (pick.conceptId === 'layered-architecture') missed += 1;
     if (pick.conceptId === 'optimistic-locking') mastered += 1;
   }

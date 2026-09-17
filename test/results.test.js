@@ -90,12 +90,69 @@ test('conceptStats collects misses with their notes', () => {
   assert.equal(misses[0].note, 'picked the pick-any-two option');
 });
 
+test('conceptStats counts a partial-credit short answer as a miss', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 1 }),
+    entry({ q: 2, type: 'short', correct: null, score: 0.5, note: 'missed the tradeoff point' })
+  ]);
+  const misses = stats.get('optimistic-locking').misses;
+  assert.equal(misses.length, 1, 'anything under full credit is a miss, not just zero');
+  assert.equal(misses[0].q, 2);
+  assert.equal(misses[0].note, 'missed the tradeoff point');
+});
+
+// Later timestamp deliberately comes FIRST in the entry list: an implementation that
+// returned the last entry in file order would pass if these were in ascending order.
 test('conceptStats records the latest timestamp seen', () => {
   const stats = conceptStats([
-    entry({ q: 1, ts: '2026-09-18T13:00:00Z' }),
-    entry({ q: 2, ts: '2026-09-20T13:00:00Z' })
+    entry({ q: 1, ts: '2026-09-20T13:00:00Z' }),
+    entry({ q: 2, ts: '2026-09-18T13:00:00Z' })
   ]);
   assert.equal(stats.get('optimistic-locking').lastTs, '2026-09-20T13:00:00Z');
+});
+
+test('conceptStats keeps a skipped question out of misses', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 1 }),
+    entry({ q: 2, score: 0, correct: false, note: 'skipped' })
+  ]);
+  const s = stats.get('optimistic-locking');
+  assert.deepEqual(s.misses, [], 'not answering is not the same as answering wrong');
+  assert.equal(s.skipped, 1);
+});
+
+test('conceptStats does not let a skipped question drag the mean down', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 1 }),
+    entry({ q: 2, score: 0, correct: false, note: 'skipped' })
+  ]);
+  const s = stats.get('optimistic-locking');
+  assert.equal(s.count, 1, 'only attempted questions count');
+  assert.equal(s.meanScore, 1);
+  assert.equal(s.attempted, true);
+});
+
+test('conceptStats marks an all-skipped concept unattempted with a zero mean', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 0, correct: false, note: 'skipped' }),
+    entry({ q: 2, score: 0, correct: false, note: 'skipped' })
+  ]);
+  const s = stats.get('optimistic-locking');
+  assert.equal(s.attempted, false);
+  assert.equal(s.count, 0);
+  assert.equal(s.skipped, 2);
+  assert.equal(s.meanScore, 0);
+  assert.equal(Number.isNaN(s.meanScore), false, '0/0 must not surface as NaN');
+});
+
+test('conceptStats only treats the exact note "skipped" as unanswered', () => {
+  const stats = conceptStats([
+    entry({ q: 1, score: 0, correct: false, note: 'skipped the middle step of the proof' })
+  ]);
+  const s = stats.get('optimistic-locking');
+  assert.equal(s.count, 1);
+  assert.equal(s.skipped, 0);
+  assert.equal(s.misses.length, 1);
 });
 
 test('coveredConceptIds returns every concept with any result', () => {

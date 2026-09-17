@@ -21,6 +21,20 @@ function entry(conceptId, score, over = {}) {
   }, over);
 }
 
+// command() reports usage errors on stderr. Swallow it so a passing suite prints only
+// test results — a bare "--count must be a positive integer" above the summary reads
+// like a failure. Tests in a file run sequentially, so the swap is safe.
+function captureStderr(fn) {
+  const original = process.stderr.write;
+  let captured = '';
+  process.stderr.write = (chunk) => { captured += chunk; return true; };
+  try {
+    return { value: fn(), stderr: captured };
+  } finally {
+    process.stderr.write = original;
+  }
+}
+
 // Deterministic generator so weighted sampling is testable.
 function seededRng(seed) {
   let s = seed;
@@ -100,6 +114,25 @@ test('concepts missing from the bank are skipped', () => {
   assert.deepEqual(reviewSet(sampleBank(), entries, { now: NOW }), []);
 });
 
+test('it never returns a concept whose every question was skipped', () => {
+  const entries = [
+    entry('layered-architecture', 0, { q: 1, note: 'skipped' }),
+    entry('layered-architecture', 0, { q: 2, note: 'skipped' })
+  ];
+  assert.deepEqual(reviewSet(sampleBank(), entries, { count: 8, now: NOW }), []);
+});
+
+test('a concept with one skipped and one answered question is still reviewable', () => {
+  const entries = [
+    entry('layered-architecture', 0, { q: 1, note: 'skipped' }),
+    entry('layered-architecture', 0, { q: 2, note: 'confused it with a facade' })
+  ];
+  const [r] = reviewSet(sampleBank(), entries, { count: 8, now: NOW });
+  assert.equal(r.conceptId, 'layered-architecture');
+  assert.equal(r.meanScore, 0);
+  assert.equal(r.misses.length, 1, 'only the answered-and-wrong question is a miss');
+});
+
 test('--count rejects a fractional value', () => {
   assert.throws(() => parseCount(['--count', '3.5']), (err) => {
     assert.equal(err.usage, true);
@@ -138,21 +171,53 @@ test('--count defaults to 8 when omitted', () => {
 });
 
 test('command returns exit code 2 for a fractional --count', () => {
-  const exit = command(['--count', '3.5']);
-  assert.equal(exit, 2);
+  const { value, stderr } = captureStderr(() => command(['--count', '3.5']));
+  assert.equal(value, 2);
+  assert.match(stderr, /positive integer/);
 });
 
 test('command returns exit code 2 for zero --count', () => {
-  const exit = command(['--count', '0']);
-  assert.equal(exit, 2);
+  assert.equal(captureStderr(() => command(['--count', '0'])).value, 2);
 });
 
 test('command returns exit code 2 for a negative --count', () => {
-  const exit = command(['--count', '-5']);
-  assert.equal(exit, 2);
+  assert.equal(captureStderr(() => command(['--count', '-5'])).value, 2);
 });
 
 test('command returns exit code 2 for missing --count value', () => {
-  const exit = command(['--count']);
-  assert.equal(exit, 2);
+  assert.equal(captureStderr(() => command(['--count'])).value, 2);
+});
+
+test('--count accepts the --count=N form', () => {
+  assert.equal(parseCount(['--count=5']), 5);
+});
+
+test('--count=N rejects a fractional value', () => {
+  assert.throws(() => parseCount(['--count=3.5']), (err) => {
+    assert.equal(err.usage, true);
+    assert.match(err.message, /positive integer/);
+    return true;
+  });
+});
+
+test('--count=N rejects zero', () => {
+  assert.throws(() => parseCount(['--count=0']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
+});
+
+test('--count= rejects an empty value', () => {
+  assert.throws(() => parseCount(['--count=']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
+});
+
+test('command returns exit code 2 for a fractional --count=N', () => {
+  assert.equal(captureStderr(() => command(['--count=3.5'])).value, 2);
+});
+
+test('command returns exit code 2 for --count=0', () => {
+  assert.equal(captureStderr(() => command(['--count=0'])).value, 2);
 });

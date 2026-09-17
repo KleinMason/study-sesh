@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { initKit } = require('../lib/init');
+const { initKit, parseOptions } = require('../lib/init');
 
 function makeBareKit() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'study-init-'));
@@ -39,6 +39,43 @@ test('initKit honors an explicit data directory', () => {
     fs.rmSync(root, { recursive: true, force: true });
     fs.rmSync(target, { recursive: true, force: true });
   }
+});
+
+test('--data-dir=PATH reaches config.json, not just --data-dir PATH', () => {
+  const root = makeBareKit();
+  const target = path.join(os.tmpdir(), 'equals-form-study-data');
+  try {
+    // The bug this pins: indexOf('--data-dir') missed the = form, so init exited 0,
+    // reported success, and wrote "./data" — and never overwrote it on a retry.
+    initKit(root, parseOptions([`--data-dir=${target}`]));
+    const cfg = JSON.parse(fs.readFileSync(path.join(root, 'config.json'), 'utf8'));
+    assert.equal(cfg.dataDir, target);
+    assert.equal(fs.existsSync(path.join(target, 'quizzes', '.keys')), true);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(target, { recursive: true, force: true });
+  }
+});
+
+test('parseOptions accepts both --data-dir spellings', () => {
+  assert.deepEqual(parseOptions(['--data-dir', '/tmp/spaced']), { dataDir: '/tmp/spaced' });
+  assert.deepEqual(parseOptions(['--data-dir=/tmp/equals']), { dataDir: '/tmp/equals' });
+  assert.deepEqual(parseOptions([]), {});
+});
+
+test('parseOptions rejects --data-dir= with an empty value', () => {
+  assert.throws(() => parseOptions(['--data-dir=']), (err) => {
+    assert.equal(err.usage, true);
+    assert.match(err.message, /requires a path/);
+    return true;
+  });
+});
+
+test('parseOptions rejects --data-dir with no value at all', () => {
+  assert.throws(() => parseOptions(['--data-dir']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
 });
 
 test('initKit scaffolds the quizzes and keys directories', () => {

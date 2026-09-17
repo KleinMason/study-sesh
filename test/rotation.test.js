@@ -1,8 +1,10 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { sampleBank } = require('./helpers');
-const { nextTopic } = require('../lib/rotation');
+const fs = require('node:fs');
+const path = require('node:path');
+const { sampleBank, makeTempKit } = require('./helpers');
+const { nextTopic, readState } = require('../lib/rotation');
 
 const EMPTY_STATE = { version: 1, cursor: { categoryId: null, round: 1 } };
 
@@ -92,4 +94,31 @@ test('a cursor pointing at a category no longer in the bank starts over', () => 
   const { result: r } = nextTopic(sampleBank(), [], state);
   assert.equal(r.categoryId, '01-layers');
   assert.equal(r.round, 3);
+});
+
+test('readState defaults when state.json does not exist', () => {
+  const kit = makeTempKit();
+  try {
+    assert.deepEqual(readState(kit.dataDir), EMPTY_STATE);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('readState names the file and the remedy when state.json is malformed', () => {
+  const kit = makeTempKit();
+  const statePath = path.join(kit.dataDir, 'state.json');
+  try {
+    fs.writeFileSync(statePath, '{"version": 1, "cursor": {"categoryId": "01-lay');
+    assert.throws(() => readState(kit.dataDir), (err) => {
+      assert.ok(
+        err.message.includes(statePath),
+        `error must name the file, got: ${err.message}`
+      );
+      assert.match(err.message, /delete the file/);
+      return true;
+    });
+  } finally {
+    kit.cleanup();
+  }
 });

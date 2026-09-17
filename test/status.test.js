@@ -90,3 +90,20 @@ test('buildStatus excludes concepts retired from the bank', () => {
   const weakest = buildStatus(sampleBank(), entries, STATE).weakest;
   assert.deepEqual(weakest.map((w) => w.conceptId), ['layered-architecture']);
 });
+
+// "Weakest" is the list that tells the learner what to study next. A concept they never
+// answered has no score to be weak at, and showing it at 0.00 would rank a blank quiz
+// above every question they actually got wrong.
+test('buildStatus excludes concepts whose every question was skipped', () => {
+  const skipped = { ...entry('layered-architecture', '01-layers', 0), note: 'skipped' };
+  const entries = [skipped, entry('dependency-inversion', '01-layers', 0.5)];
+  const weakest = buildStatus(sampleBank(), entries, STATE).weakest;
+  assert.deepEqual(weakest.map((w) => w.conceptId), ['dependency-inversion']);
+});
+
+test('buildStatus does not count an all-skipped concept as covered', () => {
+  const skipped = { ...entry('layered-architecture', '01-layers', 0), note: 'skipped' };
+  const status = buildStatus(sampleBank(), [skipped], STATE);
+  assert.equal(status.totals.conceptsCovered, 0);
+  assert.equal(status.categories[0].covered, 0);
+});

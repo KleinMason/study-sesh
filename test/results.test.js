@@ -155,12 +155,44 @@ test('conceptStats only treats the exact note "skipped" as unanswered', () => {
   assert.equal(s.misses.length, 1);
 });
 
-test('coveredConceptIds returns every concept with any result', () => {
+test('coveredConceptIds returns every concept with an attempted result', () => {
   const covered = coveredConceptIds([
     entry(),
     entry({ conceptId: 'fencing-tokens', quiz: '2026-09-19-fencing-tokens' })
   ]);
   assert.deepEqual([...covered].sort(), ['fencing-tokens', 'optimistic-locking']);
+});
+
+// A quiz that went out and came back entirely blank taught nothing. Counting it as
+// covered would retire the concept from this round's rotation while `attempted: false`
+// simultaneously hides it from the weekly review — the concept would fall through both.
+test('coveredConceptIds omits a concept whose every question was skipped', () => {
+  const covered = coveredConceptIds([
+    entry({ q: 1, score: 0, correct: false, note: 'skipped' }),
+    entry({ q: 2, score: 0, correct: false, note: 'skipped' })
+  ]);
+  assert.equal(covered.size, 0);
+});
+
+test('coveredConceptIds counts a concept with even one attempted question', () => {
+  const covered = coveredConceptIds([
+    entry({ q: 1, score: 0, correct: false, note: 'skipped' }),
+    entry({ q: 2, score: 1 })
+  ]);
+  assert.deepEqual([...covered], ['optimistic-locking']);
+});
+
+test('readResults numbers a malformed line by its position in the file', () => {
+  const kit = makeTempKit();
+  try {
+    fs.writeFileSync(
+      path.join(kit.dataDir, 'results.jsonl'),
+      '\n' + JSON.stringify(entry()) + '\n' + 'NOT JSON\n'
+    );
+    assert.throws(() => readResults(kit.dataDir), /line 3 is not valid JSON/);
+  } finally {
+    kit.cleanup();
+  }
 });
 
 test('gradedQuizIds returns every quiz id with results', () => {

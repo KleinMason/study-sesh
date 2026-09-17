@@ -12,7 +12,8 @@ const COMMANDS = {
 const USAGE = `study — daily backend quiz loop
 
 Usage:
-  study next-topic              Print the next category + concept as JSON
+  study next-topic              Print the next category + concept as JSON (read-only)
+  study next-topic --commit     Same, and advance the rotation cursor
   study record-result           Read a JSON array of results on stdin and append
   study review-set --count N    Print a weighted retention sample as JSON
   study status                  Print a coverage report
@@ -33,9 +34,12 @@ async function main(argv) {
   return await loader()(argv.slice(1));
 }
 
+// Setting exitCode rather than calling process.exit() lets Node drain stdout first.
+// process.exit() truncates a piped write that has not flushed, and every consumer of
+// these commands reads their stdout through a pipe.
 main(process.argv.slice(2))
-  .then((code) => process.exit(code || 0))
+  .then((code) => { process.exitCode = code || 0; })
   .catch((err) => {
-    process.stderr.write(`${err.message}\n`);
-    process.exit(1);
+    process.stderr.write(`${err && err.message ? err.message : String(err)}\n`);
+    process.exitCode = 1;
   });

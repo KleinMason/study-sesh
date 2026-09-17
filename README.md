@@ -69,7 +69,8 @@ everywhere, including in the scheduled tasks, which name the path explicitly.
 
 | Command | What it does |
 |---|---|
-| `study next-topic` | Print the next category and concept as JSON |
+| `study next-topic` | Print the next category and concept as JSON. Read-only — safe to run just to look |
+| `study next-topic --commit` | Same, and advance the rotation cursor. The generator runs this only after the quiz file exists |
 | `study record-result` | Append a JSON array of graded results from stdin |
 | `study review-set --count N` | Print a weighted retention sample |
 | `study status` | Coverage report and weakest concepts |

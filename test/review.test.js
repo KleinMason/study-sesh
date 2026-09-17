@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { sampleBank } = require('./helpers');
-const { reviewSet } = require('../lib/review');
+const { reviewSet, parseCount, command } = require('../lib/review');
 
 const NOW = new Date('2026-10-01T12:00:00Z');
 const OLD = '2026-09-01T12:00:00Z';
@@ -98,4 +98,61 @@ test('sampling is without replacement', () => {
 test('concepts missing from the bank are skipped', () => {
   const entries = [entry('retired-concept', 0)];
   assert.deepEqual(reviewSet(sampleBank(), entries, { now: NOW }), []);
+});
+
+test('--count rejects a fractional value', () => {
+  assert.throws(() => parseCount(['--count', '3.5']), (err) => {
+    assert.equal(err.usage, true);
+    assert.match(err.message, /positive integer/);
+    return true;
+  });
+});
+
+test('--count rejects zero', () => {
+  assert.throws(() => parseCount(['--count', '0']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
+});
+
+test('--count rejects a negative value', () => {
+  assert.throws(() => parseCount(['--count', '-2']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
+});
+
+test('--count rejects when value is missing', () => {
+  assert.throws(() => parseCount(['--count']), (err) => {
+    assert.equal(err.usage, true);
+    return true;
+  });
+});
+
+test('--count accepts a valid positive integer', () => {
+  assert.equal(parseCount(['--count', '5']), 5);
+});
+
+test('--count defaults to 8 when omitted', () => {
+  assert.equal(parseCount([]), 8);
+});
+
+test('command returns exit code 2 for a fractional --count', () => {
+  const exit = command(['--count', '3.5']);
+  assert.equal(exit, 2);
+});
+
+test('command returns exit code 2 for zero --count', () => {
+  const exit = command(['--count', '0']);
+  assert.equal(exit, 2);
+});
+
+test('command returns exit code 2 for a negative --count', () => {
+  const exit = command(['--count', '-5']);
+  assert.equal(exit, 2);
+});
+
+test('command returns exit code 2 for missing --count value', () => {
+  const exit = command(['--count']);
+  assert.equal(exit, 2);
 });

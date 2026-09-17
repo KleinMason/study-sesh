@@ -70,3 +70,23 @@ test('formatStatus renders a readable report', () => {
   assert.match(text, /Round 2/);
   assert.match(text, /Separation of Concerns\s+1\/2/);
 });
+
+test('buildStatus sorts tied concepts by conceptId', () => {
+  const entries = [
+    entry('optimistic-locking', '06-concurrency', 0.5),
+    entry('dependency-inversion', '01-layers', 0.5)
+  ];
+  const weakest = buildStatus(sampleBank(), entries, STATE).weakest;
+  assert.deepEqual(weakest.map((w) => w.conceptId), [
+    'dependency-inversion', 'optimistic-locking'
+  ]);
+});
+
+test('buildStatus excludes concepts retired from the bank', () => {
+  const entries = [
+    entry('layered-architecture', '01-layers', 0),
+    entry('retired-concept', '01-layers', 0)
+  ];
+  const weakest = buildStatus(sampleBank(), entries, STATE).weakest;
+  assert.deepEqual(weakest.map((w) => w.conceptId), ['layered-architecture']);
+});

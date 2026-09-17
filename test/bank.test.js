@@ -88,3 +88,72 @@ test('loadBank rejects an unsupported version', () => {
     kit.cleanup();
   }
 });
+
+test('loadBank rejects a top-level null value', () => {
+  const kit = makeTempKit();
+  try {
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const p = path.join(kit.root, 'syllabus', 'concept-bank.json');
+    fs.writeFileSync(p, 'null', 'utf8');
+    assert.throws(() => loadBank(p), /concept bank must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('loadBank rejects a top-level array', () => {
+  const kit = makeTempKit();
+  try {
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const p = path.join(kit.root, 'syllabus', 'concept-bank.json');
+    fs.writeFileSync(p, '[]', 'utf8');
+    assert.throws(() => loadBank(p), /concept bank must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('loadBank rejects a top-level primitive', () => {
+  const kit = makeTempKit();
+  try {
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const p = path.join(kit.root, 'syllabus', 'concept-bank.json');
+    fs.writeFileSync(p, '"string"', 'utf8');
+    assert.throws(() => loadBank(p), /concept bank must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('loadBank rejects a null entry in categories', () => {
+  const kit = makeTempKit();
+  try {
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const bank = sampleBank();
+    bank.categories[0] = null;
+    const p = path.join(kit.root, 'syllabus', 'concept-bank.json');
+    fs.writeFileSync(p, JSON.stringify(bank), 'utf8');
+    assert.throws(() => loadBank(p), /category entry must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});
+
+test('loadBank rejects a null entry in concepts', () => {
+  const kit = makeTempKit();
+  try {
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const bank = sampleBank();
+    bank.categories[0].concepts[0] = null;
+    const p = path.join(kit.root, 'syllabus', 'concept-bank.json');
+    fs.writeFileSync(p, JSON.stringify(bank), 'utf8');
+    assert.throws(() => loadBank(p), /concept entry must be an object/);
+  } finally {
+    kit.cleanup();
+  }
+});

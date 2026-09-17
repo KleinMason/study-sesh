@@ -1,0 +1,5 @@
+{
+  "dataDir": "./data",
+  "syllabus": "syllabus/concept-bank.json",
+  "timezone": "America/Chicago"
+}

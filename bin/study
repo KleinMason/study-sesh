@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+'use strict';
+
+const COMMANDS = {
+  'next-topic': () => require('../lib/rotation').command,
+  'record-result': () => require('../lib/record').command,
+  'review-set': () => require('../lib/review').command,
+  status: () => require('../lib/status').command,
+  init: () => require('../lib/init').command
+};
+
+const USAGE = `study — daily backend quiz loop
+
+Usage:
+  study next-topic              Print the next category + concept as JSON
+  study record-result           Read a JSON array of results on stdin and append
+  study review-set --count N    Print a weighted retention sample as JSON
+  study status                  Print a coverage report
+  study init [--data-dir PATH]  Scaffold config and data directory
+`;
+
+async function main(argv) {
+  const name = argv[0];
+  if (!name || name === '--help' || name === '-h') {
+    process.stdout.write(USAGE);
+    return 0;
+  }
+  const loader = COMMANDS[name];
+  if (!loader) {
+    process.stderr.write(`Unknown command: ${name}\n\n${USAGE}`);
+    return 2;
+  }
+  return await loader()(argv.slice(1));
+}
+
+main(process.argv.slice(2))
+  .then((code) => process.exit(code || 0))
+  .catch((err) => {
+    process.stderr.write(`${err.message}\n`);
+    process.exit(1);
+  });

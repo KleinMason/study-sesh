@@ -1,0 +1,10 @@
+{
+  "name": "study-sesh",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Daily backend engineering quiz loop",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\""
+  }
+}

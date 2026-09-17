@@ -59,12 +59,15 @@ actually loads — a broken link in the primer is a defect.
 
 ## Step 5 — Write the primer
 
-300-500 words. A 3-5 minute read. **Self-contained**: every question must be answerable
+600-900 words. A 6-8 minute read. **Self-contained**: every question must be answerable
 from the primer alone, without following a link.
 
 Fixed structure, in this order:
 1. What the concept is — two or three sentences, no preamble.
-2. The mechanism — how it actually works. This is the longest part.
+2. The mechanism — how it actually works. This is the longest part, and it carries a
+   **worked example**: one concrete case with real values, names, or a short snippet.
+   Abstract description plus a worked example is the difference between recognising the
+   concept and being able to apply it. This is what the extra length is for.
 3. When it applies and when it does not.
 4. The failure mode it exists to prevent — be concrete.
 
@@ -73,6 +76,42 @@ the click. Not a bare URL dump.
 
 Write plainly. No motivational framing, no "in today's fast-paced world". The reader is a
 working engineer.
+
+### Formatting
+
+These files are read in Obsidian, so Obsidian and GitHub markdown both render. Use the
+following where they genuinely help, not on a schedule:
+
+- **One callout at the top**, immediately under `## Primer`, in the form
+  `> [!note] <one sentence>`. It holds the concept in a single sentence — what to remember
+  if nothing else survives. In a plain editor it degrades to an ordinary blockquote.
+- **A table for a contrast.** Many concepts are fundamentally comparisons — optimistic vs
+  pessimistic locking, normalization vs denormalization, write-through vs write-behind. A
+  three-column table (dimension, option A, option B) beats three paragraphs of prose.
+- **A code or config snippet** where the mechanism is clearer as code than as English: a
+  `SELECT ... FOR UPDATE`, a retry signature, a cache key format. Keep it under ten lines.
+- **Bold on first use** of every term the questions will assume the reader knows.
+
+Do not use all of these in one primer. A wall of decoration reads worse than clean prose.
+
+### Diagrams
+
+Include a Mermaid diagram **only when the concept is structural or sequential** — a layer
+stack, a request or message flow, a state machine, a lock timeline, a replication
+topology. When the concept is a definition, a naming convention, or a tradeoff argument,
+there is nothing to draw: write prose instead. A decorative diagram is worse than none,
+because it costs the reader attention and returns nothing.
+
+When one earns its place:
+
+- Fence it as ```mermaid. `flowchart LR`, `sequenceDiagram`, and `stateDiagram-v2` cover
+  nearly everything worth drawing here.
+- Keep it under about ten nodes. A diagram that needs scrolling has stopped being a
+  summary.
+- **Caption it** with one line directly underneath saying what to notice — the thing the
+  picture shows that the prose cannot. A diagram nobody knows how to read is decoration.
+- Never put an answer in a node label. The diagram is part of the primer, and the reader
+  sees it before answering.
 
 ## Step 6 — Write the questions
 
@@ -102,7 +141,19 @@ Category: <Category Name> · Round <N> · <YYYY-MM-DD>
 
 ## Primer
 
-<300-500 words>
+> [!note] <the concept in one sentence>
+
+<what it is — two or three sentences>
+
+<the mechanism, including the worked example. A Mermaid diagram goes here when the
+concept is structural or sequential, captioned with one line on what to notice. A
+contrast table goes here when the concept is a comparison.>
+
+<when it applies and when it does not>
+
+<the failure mode it prevents>
+
+<600-900 words total>
 
 ### Go deeper
 - [Title](url) — why this one is worth reading.
@@ -170,7 +221,13 @@ Check all of the following. If any fails, fix it before reporting success:
   exists in the quiz file.
 - Every short-answer key entry has a rubric with 2-3 points.
 - Every cited URL was successfully fetched during research.
-- The primer is between 300 and 500 words.
+- The primer is between 600 and 900 words, counting prose only — not the `Go deeper`
+  list, and not the contents of code or Mermaid blocks.
+- Any Mermaid block is fenced as ```mermaid, names a diagram type on its first line, and
+  is followed by a caption line. A diagram with no caption is decoration.
+- No Mermaid node label, table cell, or code comment contains answer text. The reader sees
+  the whole primer before answering, and a grep for the key's answer strings will not
+  catch an answer paraphrased inside a diagram.
 - The quiz `.md` contains no answer content from the key: no correct-option markers, no
   `why` explanations, no rubric text. Grep the `.md` for the key's own answer strings and
   confirm no match.

@@ -1,11 +1,15 @@
 ---
 name: study-grade
-description: Grade a completed backend study quiz — score answers against the key, explain every miss, and record results. Use when the user says "grade me", "grade my quiz", or runs /grade.
+description: Grade a completed backend study quiz — score answers against the key, explain every miss, and record results. Use when the user asks to grade a quiz, or points at this file by path. (Only fires on "grade me" or /grade if the user has installed this directory under .claude/skills/; the kit does not install itself.)
 ---
 
 # Grade a study quiz
 
 ## Step 1 — Find the work
+
+The kit root is the parent directory of this skill's `skills/` folder. A human invokes
+this skill from wherever they happen to be, so resolve that path before reading anything
+else — do not assume the current working directory is the kit.
 
 Read `config.json` at the kit root for `dataDir`.
 
@@ -29,13 +33,37 @@ Extract the user's answer for each question from the text after `**Your answer:*
 does not. `score` is `1` or `0`, `correct` is `true` or `false`. Do not award partial
 credit because the reasoning was close. Do not reinterpret a clearly wrong letter.
 
+Normalize before comparing, so that formatting never decides a grade:
+
+1. Trim leading and trailing whitespace.
+2. Lowercase.
+3. Strip one trailing `)` if present.
+
+`a`, `A`, `a)`, `A)` and ` a ` all normalize to `a`. If the result is not one of the
+option letters, try to match it against the full option **text** under the same
+normalization — a user who typed the option out instead of its letter answered the
+question. If after all that the answer still does not resolve to exactly one option —
+it is blank, it names two options, or it matches none — treat it as **unanswered**, per
+the rule below. Never guess which option was meant, and never mark it wrong for being
+unparseable: a silent mis-grade permanently poisons the retention weighting.
+
 **Short answer** is scored against the rubric. Award `hitPoints / totalPoints`, rounded to
 two decimals — two of three rubric points is `0.67`. Set `correct` to `null` and `type` to
 `"short"`.
 
-**Unanswered** questions score `0` and are noted as skipped, not wrong. Use
-`"note": "skipped"` so the retention weighting can tell the difference between "did not
-get to it" and "does not understand it".
+**Unanswered** questions are recorded as skipped, not wrong, so retention weighting can
+tell "did not get to it" apart from "does not understand it". Record exactly:
+
+- `"score": 0`
+- `"correct": false` — for **both** `mc` and `short` questions. `correct: null` is
+  rejected by `record-result` for `mc` entries, and a blank multiple-choice question is
+  the common case, so the whole batch would fail. `false` here means "no correct answer
+  was given", and is not what marks the question wrong.
+- `"note": "skipped"` — the exact string, lowercase, nothing appended. `lib/results.js`
+  matches it literally; `"skipped - ran out of time"` is read as an ordinary wrong answer.
+
+A skipped question is excluded from the concept's mean score and from its `misses`, and a
+concept whose every question was skipped is never drawn into a weekly review.
 
 ## Step 4 — Give feedback
 
@@ -46,6 +74,10 @@ For each **miss**, three short parts:
 3. The primer paragraph to re-read, plus the relevant "Go deeper" link.
 
 For each **correct** answer, one line of confirmation. No lecture.
+
+For each **skipped** question, give the correct answer and the primer paragraph, and say
+it was not scored against the concept. "Excluded from `misses`" is a retention-weighting
+rule, not a reason to withhold the explanation.
 
 For the **short answer**, name which rubric points were hit and which were missed. The
 user should be able to see exactly what was missing, not just a number.

@@ -43,7 +43,27 @@ lost day, and why the generator's idempotency check matters.
 - The morning task writes `<dataDir>/quizzes/YYYY-MM-DD-<concept>.md`, where `<dataDir>` is
   whatever `config.json` points at (`data/` by default).
 - Read the primer, type answers after each `**Your answer:**`.
-- In a Claude session, say **"grade me"**.
+- In a Claude session started in this repo, say **"grade my quiz — follow
+  `skills/study-grade/SKILL.md`"**. Naming the path is what makes this work on a fresh
+  clone; see below if you want a shorter trigger.
+
+### Optional: enable `/grade`
+
+Claude Code discovers skills at `.claude/skills/<name>/SKILL.md`. This kit ships its
+skills at `skills/` instead, so that they travel with the repo rather than being written
+into your Claude config. Nothing is installed for you.
+
+If you want `grade me` and `/grade` to fire on their own, install them yourself — copy or
+symlink both directories:
+
+```bash
+mkdir -p .claude/skills
+ln -s ../../skills/study-grade    .claude/skills/study-grade
+ln -s ../../skills/study-generate .claude/skills/study-generate
+```
+
+That is a local choice. Without it, referring to the skill by path (above) works
+everywhere, including in the scheduled tasks, which name the path explicitly.
 
 ## Commands
 

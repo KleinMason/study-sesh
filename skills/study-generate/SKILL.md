@@ -19,9 +19,20 @@ does exactly this.
 
 ## Step 2 — Idempotency check
 
-List `<dataDir>/quizzes/`. If any file starts with today's date, stop and report:
-"Today's quiz already exists: <filename>". Generate nothing. This makes a double fire
-harmless and a missed morning a clean no-op.
+List `<dataDir>/quizzes/`. Stop only if a file matches **both** conditions:
+
+1. its name starts with today's date (`YYYY-MM-DD`), **and**
+2. its name does **not** end in `-review.md`.
+
+So `2026-09-19-optimistic-locking.md` stops today's run; `2026-09-19-review.md` does not.
+If a matching file is found, report "Today's quiz already exists: <filename>" and generate
+nothing. This makes a double fire harmless and a missed morning a clean no-op.
+
+The `-review` exclusion is load-bearing, not a detail. The weekly task writes
+`<dataDir>/quizzes/YYYY-MM-DD-review.md` into the same directory, and a task that was due
+while the desktop app was closed runs on next launch — so the weekly and the daily can
+fire on the same morning, in either order. A date-prefix-only check lets the weekly review
+silently suppress that day's daily quiz.
 
 ## Step 3 — Get the topic
 

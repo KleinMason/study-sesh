@@ -90,3 +90,20 @@ test('initKit never overwrites an existing state.json', () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('initKit reports skipped on a second run', () => {
+  const root = makeBareKit();
+  try {
+    const run1 = initKit(root, {});
+    assert.ok(run1.created.length > 0);
+    assert.equal(run1.skipped.length, 0);
+
+    const run2 = initKit(root, {});
+    assert.deepEqual(run2.created, []);
+    assert.ok(run2.skipped.includes('config.json'));
+    assert.ok(run2.skipped.includes('state.json'));
+    assert.ok(run2.skipped.some(s => s.includes('quizzes/.keys')));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

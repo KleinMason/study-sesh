@@ -174,6 +174,15 @@ Check all of the following. If any fails, fix it before reporting success:
 - The quiz `.md` contains no answer content from the key: no correct-option markers, no
   `why` explanations, no rubric text. Grep the `.md` for the key's own answer strings and
   confirm no match.
+- The correct options are not all the same letter. Writing three questions whose answer is
+  `b` every time is a strong natural tendency — the correct option tends to get drafted
+  second — and it makes the quiz answerable without reading the primer. If they came out
+  identical, reorder the options on one question.
+
+  When you reorder, move the `correct` letter and the `distractors` keys **together**. The
+  distractor map is keyed by position, so swapping option text without remapping the keys
+  silently attaches each misconception to the wrong option, and the grader will then
+  explain a miss the learner did not make.
 
 ## Step 9 — Commit the rotation cursor
 

@@ -37,7 +37,7 @@ silently suppress that day's daily quiz.
 ## Step 3 — Get the topic
 
 Run `bin/study next-topic`. Parse the JSON. This call is read-only: it reports the topic
-without advancing the rotation cursor. Committing is a separate step you take in Step 9,
+without advancing the rotation cursor. Committing is a separate step you take in Step 10,
 only once the quiz file actually exists — so if research fails or this run dies partway,
 tomorrow retries the same category instead of silently skipping it.
 
@@ -162,7 +162,51 @@ Category: <Category Name> · Round <N> · <YYYY-MM-DD>
 **The answer key never goes in the quiz file.** The reader must be able to read the whole
 primer without scrolling into answers.
 
-## Step 8 — Self-validate before finishing
+## Step 8 — Check every question against its key
+
+Before the quiz goes anywhere near the user, take each question and hold it against its
+key entry and the primer. Step 9 checks the files are well formed; this step checks the
+questions are *fair* — that someone who read the primer carefully can earn every point
+the key awards. A question that fails here gets rewritten, not shipped with a note.
+
+**Answer it cold first.** Answer every question using only the quiz `.md` — the primer and
+the questions — without looking at the key. If you can dispatch a subagent, give it the
+`.md` path alone and have it answer; otherwise answer it yourself before re-opening the
+key. Then compare with the key. Any question where the cold answer disagrees with the key,
+or where the cold reader could not find the answer in the primer, fails.
+
+**Then, for each multiple-choice question:**
+- Quote the primer sentence that makes the `correct` option right. If the question says
+  "the primer gives" or "the primer describes", that sentence must state it plainly, in
+  terms a reader would recognise as the answer to *this* question — not an aside that only
+  supports it once you already know the answer.
+- Confirm no distractor is also defensible from the primer. If a careful reader could argue
+  for a second option using the primer's own words, the question has two answers.
+- Confirm each `distractors` entry describes the option it is keyed to, after any
+  reordering.
+
+**For the short answer, check each rubric point separately:**
+- **The question asks for it.** Every rubric point must answer a part of the question the
+  learner can see. If the rubric awards "names the thread-safety obligation", the question
+  must ask about an obligation or cost, not just "what does this buy them".
+- **The question does not give it away.** A point that the question's own wording already
+  states — a scenario that says "so the sockets are reused", graded on "names that the
+  connections are reused" — rewards restating the prompt. Cut the premise from the
+  question or change the point.
+- **The primer supports it.** Quote the primer sentence each point is graded against. A
+  point the primer never makes cannot be earned by someone who studied it, however
+  correct the point is.
+- **It can be graded.** The point says concretely what earns it and, where a generic
+  answer is likely ("a shorter-lived dependency"), whether that is enough or whether an
+  example is required. The grader should not have to guess.
+
+This step exists because of `2026-09-21-singleton-and-lifetimes`. The learner answered one
+multiple-choice question with "this is not mentioned in the primer": the supporting sentence
+was the last clause of the first paragraph, framed as a side note rather than as "the
+reason". The short-answer rubric awarded a point the question's own scenario had already
+given away. Both could have been caught before the quiz was handed over.
+
+## Step 9 — Self-validate before finishing
 
 Check all of the following. If any fails, fix it before reporting success:
 - One key entry exists for every question in the quiz file, with matching `q` numbers.
@@ -184,9 +228,9 @@ Check all of the following. If any fails, fix it before reporting success:
   silently attaches each misconception to the wrong option, and the grader will then
   explain a miss the learner did not make.
 
-## Step 9 — Commit the rotation cursor
+## Step 10 — Commit the rotation cursor
 
-Only after Step 8 passes, run `bin/study next-topic --commit`. This advances the cursor so
+Only after Steps 8 and 9 pass, run `bin/study next-topic --commit`. This advances the cursor so
 tomorrow serves the next category. Because neither the cursor nor `results.jsonl` changed
 since Step 3, it returns the same topic you just wrote a quiz for — confirm that it does.
 If it reports a different concept, something else ran in between: stop and report rather
@@ -195,7 +239,7 @@ than committing.
 Never run `--commit` before the quiz and key files are written and validated. An advanced
 cursor with no quiz behind it is a category that silently loses its turn for the round.
 
-## Step 10 — Report
+## Step 11 — Report
 
 Print the concept name and the absolute path to the quiz file. Nothing else — this line
 becomes the morning notification.
